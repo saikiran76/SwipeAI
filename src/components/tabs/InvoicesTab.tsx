@@ -10,6 +10,8 @@ const InvoicesTab = () => {
   const loading = useSelector((state: RootState) => state.invoices.loading);
   const error = useSelector((state: RootState) => state.invoices.error);
 
+  console.log('InvoicesTab render:', { enrichedInvoices, loading, error });
+
   const columns = [
     { key: 'serialNumber', label: 'Serial Number', sortable: true },
     { key: 'customerName', label: 'Customer Name', sortable: true },
@@ -26,6 +28,8 @@ const InvoicesTab = () => {
       {error && <ErrorAlert message={error} onDismiss={() => {}} />}
       {loading ? (
         <div className="text-center py-4">Loading...</div>
+      ) : enrichedInvoices.length === 0 ? (
+        <div className="text-center py-4">No invoices found</div>
       ) : (
         <Table columns={columns} data={enrichedInvoices} />
       )}

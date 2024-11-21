@@ -4,7 +4,7 @@ import { RootState } from '../../utils/appStore';
 import { Product } from '../../utils/types';
 
 const ProductsTab = () => {
-  const products = useSelector((state: RootState) => state.products.items);
+  const products = useSelector((state: RootState) => state.products.items) as Product[];
   const loading = useSelector((state: RootState) => state.products.loading);
 
   const columns = [

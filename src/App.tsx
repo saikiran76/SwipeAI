@@ -5,9 +5,10 @@ import TabLayout from './components/TabLayout';
 const App = () => {
   return (
     <Provider store={store}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 font-sans">
         <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto py-6 px-4">
+          <div className="flex justify-center items-center gap-6 max-w-7xl mx-auto py-6 px-4">
+            <img src="https://getswipe.in/static/img/brand_logo.svg" alt="Swipe Logo" className="size-24" />
             <h1 className="text-3xl font-bold text-gray-900">
               Invoice Management System
             </h1>

@@ -6,29 +6,34 @@ export const selectCustomers = (state: RootState) => state.customers.items;
 export const selectProducts = (state: RootState) => state.products.items;
 
 export const getEnrichedInvoices = createSelector(
-    [
-      (state: RootState) => state.invoices.items,
-      (state: RootState) => state.customers.items,
-      (state: RootState) => state.products.items
-    ],
+    [selectInvoices, selectCustomers, selectProducts],
     (invoices, customers, products) => {
-      return invoices.map(invoice => {
-        const customer = customers.find(c => c.id === invoice.customerId);
-        const product = products.find(p => p.id === invoice.productId);
-        if (!customer || !product) {
-          console.warn(`Missing relationship - Invoice: ${invoice.id}, Customer: ${invoice.customerId}, Product: ${invoice.productId}`);
-        }
-        
+      console.log('Selector received:', { invoices, customers, products });
+  
+      const enriched = invoices.map((invoice) => {
+        const customer = customers.find((c) => c.id === invoice.customerId) || {
+          name: `Unknown Customer (${invoice.customerId})`,
+        };
+        const product = products.find((p) => p.id === invoice.productId) || {
+          name: `Unknown Product (${invoice.productId})`,
+          unitPrice: 0,
+          priceWithTax: 0,
+        };
+  
         return {
           ...invoice,
-          customerName: customer?.name || `Customer ${invoice.customerId}`,
-          productName: product?.name || `Product ${invoice.productId}`,
-          unitPrice: product?.unitPrice || 0,
-          priceWithTax: product?.priceWithTax || 0
+          customerName: customer.name,
+          productName: product.name,
+          unitPrice: product.unitPrice,
+          priceWithTax: product.priceWithTax,
         };
       });
+  
+      return enriched;
     }
   );
+  
+  
 
 export const getCustomerWithInvoices = createSelector(
   [selectInvoices, selectCustomers, 

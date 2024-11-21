@@ -53,6 +53,6 @@ interface ExtractedData {
       phoneNumber: string;
       totalPurchaseAmount: number;
     }[];
-  }
+}
   
 export type { Customer, Product, Invoice, ExtractedData };
