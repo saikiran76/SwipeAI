@@ -15,26 +15,26 @@ const InvoicesTab = () => {
 
   const columns: Column[] = [
     { key: 'serialNumber', label: 'Serial Number', sortable: true },
-    { key: 'customerName', label: 'Customer Name', sortable: true },
+    { key: 'customerName', label: 'Customer Name', sortable: true }, // Ensure this is mapped correctly
     { key: 'productName', label: 'Product Name', sortable: true },
     { key: 'quantity', label: 'Quantity', sortable: true },
     {
       key: 'tax',
       label: 'Tax',
       sortable: true,
-      render: (invoice: any) =>
-        invoice.taxRate && invoice.taxAmount
-          ? `${invoice.taxRate}% (${formatCurrency(invoice.taxAmount)})`
-          : '-',
+      render: (invoice: Invoice) =>
+          invoice.taxRate && invoice.taxAmount
+              ? `${invoice.taxRate}% (${formatCurrency(invoice.taxAmount)})`
+              : '-',
     },
     {
       key: 'totalAmount',
       label: 'Total Amount',
       sortable: true,
-      render: (invoice: Invoice) => formatCurrency(invoice.totalAmount),
+      render: (invoice) => formatCurrency(invoice.totalAmount),
     },
     { key: 'date', label: 'Date', sortable: true },
-  ];
+];
 
   return (
     <div>

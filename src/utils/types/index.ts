@@ -25,9 +25,12 @@ export interface Invoice {
   id: string;
   serialNumber: string;
   customerId: string;
+  customerName: string;
   productId: string;
   quantity: number;
-  tax: number;
+  // tax: number;
+  taxRate: number;
+  taxAmount: number;
   totalAmount: number;
   date: string;
 }

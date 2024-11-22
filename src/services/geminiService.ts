@@ -8,17 +8,14 @@ interface ExtractedData {
 }
 
 export const validateExtractedData = (data: any): ExtractedData => {
-  // Basic structure validation
   if (!data || typeof data !== "object") {
     throw new Error("Invalid data structure");
   }
 
-  // Ensure arrays exist
   data.invoices = Array.isArray(data.invoices) ? data.invoices : [];
   data.products = Array.isArray(data.products) ? data.products : [];
   data.customers = Array.isArray(data.customers) ? data.customers : [];
 
-  // No need to create default entries if arrays are empty
   return data as ExtractedData;
 };
 
