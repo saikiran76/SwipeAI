@@ -1,43 +1,34 @@
+// server.js
+
 import express from 'express';
-import type { Application, Request, Response, RequestHandler } from 'express';
 import multer from 'multer';
-import type { Multer as MulterType } from 'multer';
 import cors from 'cors';
-import { processDocument } from './src/services/documentProcessor';
+import { processFile } from './documentProcessor';
 
-// Define the request type with Multer's file
-interface FileRequest extends Request {
-  file?: Express.Multer.File;
-}
-
-const app: Application = express();
-const upload: MulterType = multer({ storage: multer.memoryStorage() });
+const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
 app.use(express.json());
 
-const handlePdfUpload: RequestHandler = async (req: FileRequest, res: Response): Promise<void> => {
+app.post('/api/process-file', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
       return;
     }
 
-    const result = await processDocument(req.file.buffer);
+    const fileType = req.file.mimetype;
+
+    const result = await processFile(req.file.buffer, fileType);
     res.json(result);
   } catch (error) {
-    console.error('PDF processing error:', error);
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Failed to process PDF' 
+    console.error('Error processing request:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'An unexpected error occurred',
     });
   }
-};
-
-app.post(
-  '/api/process-pdf',
-  upload.single('file'),
-  handlePdfUpload
-);
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

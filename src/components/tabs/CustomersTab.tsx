@@ -2,18 +2,34 @@ import { useSelector } from 'react-redux';
 import Table from '../common/Table';
 import { RootState } from '../../utils/appStore';
 import ErrorAlert from '../common/ErrorAlert';
+import { Column } from '../common/Table';
+import { formatCurrency } from '../../helpers/helper';
+
+interface Customer {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  email: string;
+  address: string;
+  totalPurchaseAmount: number;
+}
 
 const CustomersTab = () => {
-  const customers = useSelector((state: RootState) => state.customers.items);
+  const customers = useSelector((state: RootState) => state.customers.items) as Customer[];
   const loading = useSelector((state: RootState) => state.customers.loading);
   const error = useSelector((state: RootState) => state.customers.error);
 
-  const columns = [
+  const columns: Column[] = [
     { key: 'name', label: 'Customer Name', sortable: true },
     { key: 'phoneNumber', label: 'Phone Number', sortable: true },
-    { key: 'totalPurchaseAmount', label: 'Total Purchase Amount', sortable: true },
     { key: 'email', label: 'Email', sortable: true },
     { key: 'address', label: 'Address', sortable: true },
+    {
+      key: 'totalPurchaseAmount',
+      label: 'Total Purchase Amount',
+      sortable: true,
+      render: (customer: Customer) => formatCurrency(customer.totalPurchaseAmount),
+    },
   ];
 
   if (loading) {

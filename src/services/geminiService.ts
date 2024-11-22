@@ -1,5 +1,5 @@
 import { Invoice, Product, Customer } from '../utils/types';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 
 interface ExtractedData {
   invoices: Invoice[];
@@ -9,8 +9,8 @@ interface ExtractedData {
 
 export const validateExtractedData = (data: any): ExtractedData => {
   // Basic structure validation
-  if (!data || typeof data !== 'object') {
-    throw new Error('Invalid data structure');
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid data structure");
   }
 
   // Ensure arrays exist
@@ -18,45 +18,49 @@ export const validateExtractedData = (data: any): ExtractedData => {
   data.products = Array.isArray(data.products) ? data.products : [];
   data.customers = Array.isArray(data.customers) ? data.customers : [];
 
-  // Create default entries if arrays are empty
-  if (data.invoices.length === 0) {
-    const defaultId = `INV_${uuidv4()}`;
-    data.invoices.push({
-      id: defaultId,
-      serialNumber: 'unknown',
-      customerId: 'unknown',
-      productId: 'unknown',
-      quantity: 0,
-      tax: 0,
-      totalAmount: 0,
-      date: new Date().toISOString().split('T')[0]
-    });
-  }
-
-  if (data.customers.length === 0) {
-    data.customers.push({
-      id: `CUST_${uuidv4()}`,
-      name: 'Unknown Customer',
-      phoneNumber: '0000000000',
-      totalPurchaseAmount: 0
-    });
-  }
-
-  if (data.products.length === 0) {
-    data.products.push({
-      id: `PROD_${uuidv4()}`,
-      name: 'Unknown Product',
-      quantity: 0,
-      unitPrice: 0,
-      tax: 0,
-      priceWithTax: 0
-    });
-  }
-
+  // No need to create default entries if arrays are empty
   return data as ExtractedData;
 };
 
+export const validateExtractedDataNew = (data: any): ExtractedData => {
+  // Check if the data is an object
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid data structure: Expected an object.");
+  }
+
+  // Ensure required fields exist and are arrays
+  const invoices = Array.isArray(data.invoices) ? data.invoices : [];
+  const products = Array.isArray(data.products) ? data.products : [];
+  const customers = Array.isArray(data.customers) ? data.customers : [];
+
+  // Perform deeper validation (optional)
+  if (products.some((product: Product) => typeof product.unitPrice !== "number")) {
+    throw new Error("Invalid product data: `unitPrice` must be a number.");
+  }
+
+  if (invoices.some((invoice: Invoice) => typeof invoice.totalAmount !== "number")) {
+    throw new Error("Invalid invoice data: `totalAmount` must be a number.");
+  }
+
+  if (customers.some((customer: Customer) => typeof customer.name !== "string")) {
+    throw new Error("Invalid customer data: `name` must be a string.");
+  }
+
+  // Return validated data
+  return {
+    invoices,
+    products,
+    customers,
+  } as ExtractedData;
+};
+
 export const validateDataTypes = (data: any): boolean => {
+  console.log('Validation - Input data structure:', {
+    hasInvoices: Array.isArray(data.invoices),
+    hasProducts: Array.isArray(data.products),
+    hasCustomers: Array.isArray(data.customers)
+  });
+
   const typeValidators = {
     invoices: {
       id: (v: any) => typeof v === 'string' && v.startsWith('INV_'),
@@ -69,10 +73,15 @@ export const validateDataTypes = (data: any): boolean => {
     products: {
       id: (v: any) => typeof v === 'string' && v.startsWith('PROD_'),
       name: (v: any) => typeof v === 'string' && v.length > 0,
-      quantity: (v: any) => typeof v === 'number' && v >= 0,
-      unitPrice: (v: any) => typeof v === 'number' && v > 0,
-      tax: (v: any) => typeof v === 'number' && v >= 0,
-      priceWithTax: (v: any) => typeof v === 'number' && v > 0
+      quantity: (v: any) => typeof v === 'number' && v > 0,
+      unitPrice: (v: any) => typeof v === 'string' && parseFloat(v) > 0,
+      discountDisplay: (v: any) => typeof v === 'string',
+      taxDisplay: (v: any) => typeof v === 'string',
+      discountRate: (v: any) => typeof v === 'string',
+      discountAmount: (v: any) => typeof v === 'string' && !isNaN(parseFloat(v)),
+      taxRate: (v: any) => typeof v === 'string',
+      taxAmount: (v: any) => typeof v === 'string' && !isNaN(parseFloat(v)),
+      priceWithTax: (v: any) => typeof v === 'string' && parseFloat(v) > 0
     },
     customers: {
       id: (v: any) => typeof v === 'string' && v.startsWith('CUST_'),
@@ -82,11 +91,23 @@ export const validateDataTypes = (data: any): boolean => {
     }
   };
 
-  return Object.entries(typeValidators).every(([section, validators]) => 
-    data[section]?.every((item: any) => 
-      Object.entries(validators).every(([field, validator]) => validator(item[field]))
-    )
-  );
+  const result = Object.entries(typeValidators).every(([section, validators]) => {
+    const sectionValid = data[section]?.every((item: any) => {
+      const fieldResults = Object.entries(validators).map(([field, validator]) => ({
+        field,
+        valid: validator(item[field]),
+        value: item[field]
+      }));
+      
+      console.log(`Validation - ${section} item validation:`, fieldResults);
+      return fieldResults.every(r => r.valid);
+    });
+    
+    return sectionValid;
+  });
+
+  console.log('Validation - Final result:', result);
+  return result;
 }; 
 
 import * as XLSX from "xlsx";

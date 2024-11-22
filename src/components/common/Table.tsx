@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 
-interface Column {
+export interface Column {
   key: string;
   label: string;
   sortable?: boolean;
+  sortKey?: string;
+  render?: (row: any) => React.ReactNode;
 }
 
 interface TableProps {
@@ -21,7 +23,7 @@ const Table = ({ columns, data, onRowClick }: TableProps) => {
 
   const sortedData = useMemo(() => {
     let sortableData = [...data];
-    
+
     if (searchTerm) {
       sortableData = sortableData.filter((item) =>
         Object.values(item).some((value) =>
@@ -32,23 +34,32 @@ const Table = ({ columns, data, onRowClick }: TableProps) => {
 
     if (sortConfig) {
       sortableData.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
+        const { key, direction } = sortConfig;
+        const sortKey = columns.find((col) => col.key === key)?.sortKey || key;
+        const aValue = a[sortKey];
+        const bValue = b[sortKey];
+
+        // Remove currency symbols and commas
+        const aNumber = parseFloat(String(aValue).replace(/[^0-9.-]+/g, ''));
+        const bNumber = parseFloat(String(bValue).replace(/[^0-9.-]+/g, ''));
+
+        if (!isNaN(aNumber) && !isNaN(bNumber)) {
+          return direction === 'asc' ? aNumber - bNumber : bNumber - aNumber;
+        } else {
+          return direction === 'asc'
+            ? String(aValue).localeCompare(String(bValue))
+            : String(bValue).localeCompare(String(aValue));
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
       });
     }
+
     return sortableData;
-  }, [data, sortConfig, searchTerm]);
+  }, [data, sortConfig, searchTerm, columns]);
 
   const handleSort = (key: string) => {
     setSortConfig((current) => ({
       key,
-      direction:
-        current?.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+      direction: current?.key === key && current.direction === 'asc' ? 'desc' : 'asc',
     }));
   };
 
@@ -63,7 +74,7 @@ const Table = ({ columns, data, onRowClick }: TableProps) => {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -91,7 +102,7 @@ const Table = ({ columns, data, onRowClick }: TableProps) => {
               >
                 {columns.map((column) => (
                   <td key={column.key} className="px-6 py-4 whitespace-nowrap">
-                    {row[column.key]}
+                    {column.render ? column.render(row) : row[column.key]}
                   </td>
                 ))}
               </tr>
@@ -103,4 +114,4 @@ const Table = ({ columns, data, onRowClick }: TableProps) => {
   );
 };
 
-export default Table; 
+export default Table;

@@ -1,19 +1,19 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Invoice } from '../types';
+import { Invoice } from '../types/index';
 
-interface InvoicesState {
+interface InvoiceState {
   items: Invoice[];
   loading: boolean;
   error: string | null;
 }
 
-const initialState: InvoicesState = {
+const initialState: InvoiceState = {
   items: [],
   loading: false,
   error: null,
 };
 
-const invoicesSlice = createSlice({
+const invoiceSlice = createSlice({
   name: 'invoices',
   initialState,
   reducers: {
@@ -23,10 +23,14 @@ const invoicesSlice = createSlice({
     addInvoice: (state, action: PayloadAction<Invoice>) => {
       state.items.push(action.payload);
     },
-    updateInvoice: (state, action: PayloadAction<Invoice>) => {
-      const index = state.items.findIndex(item => item.id === action.payload.id);
+    updateInvoice: (
+      state,
+      action: PayloadAction<{ id: string; updates: Partial<Invoice> }>
+    ) => {
+      const { id, updates } = action.payload;
+      const index = state.items.findIndex((invoice) => invoice.id === id);
       if (index !== -1) {
-        state.items[index] = action.payload;
+        state.items[index] = { ...state.items[index], ...updates };
       }
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -38,5 +42,7 @@ const invoicesSlice = createSlice({
   },
 });
 
-export const { setInvoices, addInvoice, updateInvoice, setLoading, setError } = invoicesSlice.actions;
-export default invoicesSlice.reducer;
+export const { setInvoices, addInvoice, updateInvoice, setLoading, setError } =
+  invoiceSlice.actions;
+
+export default invoiceSlice.reducer;

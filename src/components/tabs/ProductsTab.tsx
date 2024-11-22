@@ -1,7 +1,19 @@
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import Table from '../common/Table';
 import { RootState } from '../../utils/appStore';
 import { Product } from '../../utils/types';
+// import { Column } from '../common/Table';
+
+const formatCurrency = (amount: string | number): string => {
+  if (!amount || Number(amount) === 0) {
+    return '-';
+  }
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+  }).format(Number(amount));
+};
 
 const ProductsTab = () => {
   const products = useSelector((state: RootState) => state.products.items) as Product[];
@@ -10,10 +22,38 @@ const ProductsTab = () => {
   const columns = [
     { key: 'name', label: 'Name', sortable: true },
     { key: 'quantity', label: 'Quantity', sortable: true },
-    { key: 'unitPrice', label: 'Unit Price', sortable: true },
-    { key: 'tax', label: 'Tax', sortable: true },
-    { key: 'priceWithTax', label: 'Price with Tax', sortable: true },
-    { key: 'discount', label: 'Discount', sortable: true },
+    {
+      key: 'unitPrice',
+      label: 'Unit Price',
+      sortable: true,
+      render: (product: Product) => formatCurrency(product.unitPrice),
+    },
+    {
+      key: 'discount',
+      label: 'Discount',
+      sortable: true,
+      sortKey: 'discountRate',
+      render: (product: Product) =>
+        product.discountRate && product.discountAmount
+          ? `${product.discountRate}% (-${formatCurrency(product.discountAmount)})`
+          : '-',
+    },
+    {
+      key: 'tax',
+      label: 'Tax',
+      sortable: true,
+      sortKey: 'taxRate',
+      render: (product: Product) =>
+        product.taxRate && product.taxAmount
+          ? `${product.taxRate}% (${formatCurrency(product.taxAmount)})`
+          : '-',
+    },
+    {
+      key: 'priceWithTax',
+      label: 'Price with Tax',
+      sortable: true,
+      render: (product: Product) => formatCurrency(product.priceWithTax),
+    },
   ];
 
   if (loading) {
@@ -28,4 +68,4 @@ const ProductsTab = () => {
   );
 };
 
-export default ProductsTab; 
+export default ProductsTab;

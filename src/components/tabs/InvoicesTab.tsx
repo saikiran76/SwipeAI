@@ -4,21 +4,35 @@ import { RootState } from '../../utils/appStore';
 
 import { getEnrichedInvoices } from '../../utils/selectors';
 import ErrorAlert from '../common/ErrorAlert';
+import { formatCurrency } from '../../helpers/helper';
+import { Column } from '../common/Table';
+import { Invoice } from '../../utils/types';
 
 const InvoicesTab = () => {
   const enrichedInvoices = useSelector(getEnrichedInvoices);
   const loading = useSelector((state: RootState) => state.invoices.loading);
   const error = useSelector((state: RootState) => state.invoices.error);
 
-  console.log('InvoicesTab render:', { enrichedInvoices, loading, error });
-
-  const columns = [
+  const columns: Column[] = [
     { key: 'serialNumber', label: 'Serial Number', sortable: true },
     { key: 'customerName', label: 'Customer Name', sortable: true },
     { key: 'productName', label: 'Product Name', sortable: true },
     { key: 'quantity', label: 'Quantity', sortable: true },
-    { key: 'tax', label: 'Tax', sortable: true },
-    { key: 'totalAmount', label: 'Total Amount', sortable: true },
+    {
+      key: 'tax',
+      label: 'Tax',
+      sortable: true,
+      render: (invoice: any) =>
+        invoice.taxRate && invoice.taxAmount
+          ? `${invoice.taxRate}% (${formatCurrency(invoice.taxAmount)})`
+          : '-',
+    },
+    {
+      key: 'totalAmount',
+      label: 'Total Amount',
+      sortable: true,
+      render: (invoice: Invoice) => formatCurrency(invoice.totalAmount),
+    },
     { key: 'date', label: 'Date', sortable: true },
   ];
 
