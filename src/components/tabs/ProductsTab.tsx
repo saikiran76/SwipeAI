@@ -5,7 +5,7 @@ import { Product } from '../../utils/types';
 // import { Column } from '../common/Table';
 
 const formatCurrency = (amount: string | number): string => {
-  if (!amount || Number(amount) === 0) {
+  if (amount === null || amount === undefined || Number.isNaN(Number(amount))) {
     return '-';
   }
   return new Intl.NumberFormat('en-IN', {
@@ -19,6 +19,13 @@ const ProductsTab = () => {
   const products = useSelector((state: RootState) => state.products.items) as Product[];
   const loading = useSelector((state: RootState) => state.products.loading);
 
+  const handleClick = (value: any) => {
+    if (Number.isNaN(value)) {
+      alert('Unit Price is not available for this product.');
+    }
+  };
+  
+
   const columns = [
     { key: 'name', label: 'Name', sortable: true },
     { key: 'quantity', label: 'Quantity', sortable: true },
@@ -26,7 +33,11 @@ const ProductsTab = () => {
       key: 'unitPrice',
       label: 'Unit Price',
       sortable: true,
-      render: (product: Product) => formatCurrency(product.unitPrice),
+      render: (product: Product) => (
+        <span onClick={() => handleClick(product.unitPrice)}>
+          {formatCurrency(product.unitPrice)}
+        </span>
+      ),
     },
     {
       key: 'discount',

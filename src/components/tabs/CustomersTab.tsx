@@ -28,9 +28,19 @@ const CustomersTab = () => {
       key: 'totalPurchaseAmount',
       label: 'Total Purchase Amount',
       sortable: true,
-      render: (customer: Customer) => formatCurrency(customer.totalPurchaseAmount),
+      render: (customer: Customer) => (
+        <span onClick={() => handleClick(customer.totalPurchaseAmount)}>
+          {formatCurrency(customer.totalPurchaseAmount)}
+        </span>
+      ),
     },
   ];
+
+  const handleClick = (value: number) => {
+    if (Number.isNaN(value)) {
+      alert('Total Purchase Amount is not available for this customer.');
+    }
+  };
 
   if (loading) {
     return <div className="text-center py-4">Loading...</div>;

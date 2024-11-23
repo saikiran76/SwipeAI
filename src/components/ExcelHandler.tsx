@@ -1,30 +1,56 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setInvoices } from '../utils/reducers/invoicesSlice';
-import { setProducts } from '../utils/reducers/productsSlice';
 import { setCustomers } from '../utils/reducers/customersSlice';
-import { processExcelFile } from '../services/excelProcessingService';
-import FileUploadZone from './common/FileUploadZone';
+import { setProducts } from '../utils/reducers/productsSlice';
+import { extractInvoiceData } from '../services/ExcelAIService';
+import { transformExtractedData } from '../services/ExcelDataTransformer';
+import { convertExcelToCSV } from '../helpers/excelToCsv';
+import FileUploadZone from './FileUpload';
 import TabLayout from './TabLayout';
+import Tooltip from './ToolTip';
+
+const MAX_RETRIES = 3;
 
 const ExcelHandler = () => {
   const dispatch = useDispatch();
   const [processingStatus, setProcessingStatus] = useState<string>('');
-
-  const SUPPORTED_FILE_TYPES = ['.xlsx', '.xls'];
+  const [isLoading, setIsLoading] = useState<boolean>(false); // State to control loading indicator
 
   const handleFileUpload = async (file: File) => {
     try {
-      setProcessingStatus('Processing Excel file...');
-      const processedData = await processExcelFile(file);
+      setIsLoading(true); // Show loading indicator
+      setProcessingStatus('Converting file to CSV...');
+      const csvContent = await convertExcelToCSV(file);
+
+      setProcessingStatus('Sending data to Gemini AI...');
+      let rawData;
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          rawData = await extractInvoiceData(csvContent); // Attempt extraction
+          break; // Exit loop if successful
+        } catch (error) {
+          console.warn(`Retry Attempt ${attempt}:`, error);
+          setProcessingStatus(`Retrying... Attempt ${attempt} of ${MAX_RETRIES}`);
+          if (attempt === MAX_RETRIES) {
+            throw new Error('Maximum retries reached. Failed to process the file.');
+          }
+        }
+      }
+
+      setProcessingStatus('Transforming AI response...');
+      const processedData = transformExtractedData(rawData);
 
       dispatch(setCustomers(processedData.customers));
       dispatch(setProducts(processedData.products));
       dispatch(setInvoices(processedData.invoices));
 
-      setProcessingStatus('Excel file processed successfully.');
+      setProcessingStatus('File processed successfully.');
     } catch (error: any) {
+      console.error('Processing failed:', error);
       setProcessingStatus(`Processing failed: ${error.message}`);
+    } finally {
+      setIsLoading(false); // Hide loading indicator after processing
     }
   };
 
@@ -33,9 +59,11 @@ const ExcelHandler = () => {
       <FileUploadZone
         onFileUpload={handleFileUpload}
         supportText="Supports Excel files"
-        accept={SUPPORTED_FILE_TYPES}
+        accept={['.xlsx', '.xls']}
       />
-      {processingStatus && <p className="text-sm mt-4 text-gray-700">{processingStatus}</p>}
+      
+      {isLoading && <Tooltip message={processingStatus} />}
+
       <TabLayout />
     </div>
   );
