@@ -12,6 +12,7 @@ import TabLayout from './TabLayout';
 import MethodSelector from './MethodSelector';
 import Tooltip from './ToolTip';
 import { RootState } from '../utils/appStore';
+import { processFile } from '../services/ocrService';
 
 const PdfImageHandler = () => {
   const dispatch = useDispatch();
@@ -30,7 +31,7 @@ const PdfImageHandler = () => {
 
       let extractedData;
       if (method === 'ocr') {
-        extractedData = {}; 
+        extractedData = processFile(file); 
       } else {
         const fileContent = await readFileContent(file);;
         extractedData = await extractDataFromDocument(fileContent.toString(), file.type);
