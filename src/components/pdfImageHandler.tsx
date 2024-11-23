@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setInvoices } from '../utils/reducers/invoicesSlice';
 import { setProducts } from '../utils/reducers/productsSlice';
 import { setCustomers } from '../utils/reducers/customersSlice';
@@ -10,12 +10,16 @@ import { readFileContent } from '../utils/fileReader';
 import FileUploadZone from './common/FileUploadZone';
 import TabLayout from './TabLayout';
 import MethodSelector from './MethodSelector';
+import Tooltip from './ToolTip';
+import { RootState } from '../utils/appStore';
 
 const PdfImageHandler = () => {
   const dispatch = useDispatch();
   const [showMethodSelector, setShowMethodSelector] = useState(false);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [processingStatus, setProcessingStatus] = useState<string>('');
+
+  const isLoading = useSelector((state: RootState) => state.invoices.loading);
 
   const SUPPORTED_FILE_TYPES = ['.pdf', '.jpg', '.png', '.webp'];
 
@@ -26,8 +30,7 @@ const PdfImageHandler = () => {
 
       let extractedData;
       if (method === 'ocr') {
-        // OCR handling logic (placeholder)
-        extractedData = {}; // Replace with actual OCR processing logic
+        extractedData = {}; 
       } else {
         const fileContent = await readFileContent(file);;
         extractedData = await extractDataFromDocument(fileContent.toString(), file.type);
@@ -60,7 +63,7 @@ const PdfImageHandler = () => {
         supportText="Supports PDF and Image files"
         accept={SUPPORTED_FILE_TYPES}
       />
-      {processingStatus && <p className="text-sm mt-4 text-gray-700">{processingStatus}</p>}
+      {isLoading &&  <p className="text-sm mt-4 text-gray-700"><Tooltip message={processingStatus}/></p>}
       <MethodSelector
         isVisible={showMethodSelector}
         onSelect={(method) => {

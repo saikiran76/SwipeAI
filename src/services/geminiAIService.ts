@@ -110,8 +110,7 @@ const transformGeminiResponse = (data: any): ExtractedData => {
   const products: Product[] = [];
   const customersMap = new Map<string, Customer>();
 
-  // Extracting invoice data
-  const invoiceItem = data[0]; // Assuming single invoice extraction
+  const invoiceItem = data[0];  
   const invoiceId = `INV-${invoiceItem['Invoice number']}`;
 
   // Create a customer object if not already created
@@ -127,7 +126,6 @@ const transformGeminiResponse = (data: any): ExtractedData => {
       });
   }
 
-  // Push invoice with customer name included
   invoices.push({
       id: invoiceId,
       serialNumber: invoiceItem['Invoice number'],
@@ -145,7 +143,6 @@ const transformGeminiResponse = (data: any): ExtractedData => {
 
   console.log("_invoices: ", invoices)
 
-  // Extracting product data
   if (Array.isArray(invoiceItem['Product names'])) {
       invoiceItem['Product names'].forEach((productName: string, index: number) => {
           const unitPrice = Array.isArray(invoiceItem['Unit Amount']) 
@@ -171,7 +168,6 @@ const transformGeminiResponse = (data: any): ExtractedData => {
       });
   }
 
-  // Update total purchase amount for customers
   customersMap.forEach((customer) => {
       const totalPurchaseAmount = products.reduce((sum, p) => sum + parseFloat(String(p.priceWithTax).replace(/[^\d.-]/g, '')), 0);
       customer.totalPurchaseAmount = totalPurchaseAmount;

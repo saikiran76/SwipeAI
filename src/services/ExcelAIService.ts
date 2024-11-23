@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ExtractedData } from '../utils/types';
-import { jsonrepair } from 'jsonrepair'; // Import the repair library
+import { jsonrepair } from 'jsonrepair'; 
 import Ajv from 'ajv';
 
 const ajv = new Ajv({ allErrors: true });
@@ -17,20 +17,75 @@ const schema = {
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
-const prompt = `Please extract structured JSON data from the provided CSV content. The output should include three main sections: 
-    1. **Customers**: An array of customer objects, each containing fields such as name, email, phone number, and address.
-    2. **Products**: An array of product objects, each containing fields such as product ID, name, description, and price.
-    3. **Invoices**: An array of invoice objects, each containing fields such as invoice ID, date, total amount, customer ID, and a list of purchased products.
+const prompt = `
+You are tasked with extracting structured JSON data from CSV content representing invoice transactions. Please ensure that you accurately identify and categorize the following sections based on the provided data:
 
-    Ensure that all fields are included in the output JSON structure even if some values are missing. The resulting JSON should adhere to the following schema:
+1. **Customers**: For each customer, extract and include:
+   - Name (string)
+   - Email (string, optional)
+   - Phone (string, optional)
+   - Address (string, optional)
 
+   **Note**: Ensure that each customer name is derived from the invoice data provided. If a customer has no associated details, do not include them in the output.
+
+2. **Products**: For each product associated with an invoice, extract and include:
+   - Product ID (string)
+   - Name (string)
+   - Description (string, optional)
+   - Unit Price (number)
+   - Tax Percentage (number)
+   - Price with Tax (number)
+
+   **Important**: Only include products that are directly related to the invoices. Exclude any generic charges such as "Shipping Charges" or "Debit Card Charges" unless they are explicitly listed as products in the invoice details.
+
+3. **Invoices**: For each invoice, extract and include:
+   - Invoice ID (string)
+   - Date (string in 'DD MMM YYYY' format)
+   - Total Amount (number)
+   - Customer ID (integer referencing the index of the customer in the Customers array)
+   - Tax Amount (number, optional)
+   - Products Purchased (array of product IDs)
+
+**Important Notes**:
+- Ensure all fields are present in the output JSON, even if some values are null.
+- If a product or customer cannot be identified from the provided data, indicate this in a user-friendly manner.
+- Follow this JSON schema strictly:
+
+\`\`\`json
+{
+  "customers": [
     {
-        "customers": [{ /* customer object */ }],
-        "products": [{ /* product object */ }],
-        "invoices": [{ /* invoice object */ }]
+      "name": "string",
+      "email": "string or null",
+      "phone": "string or null",
+      "address": "string or null"
     }
+  ],
+  "products": [
+    {
+      "product_id": "string",
+      "name": "string",
+      "description": "string or null",
+      "unit_price": number,
+      "tax_percentage": number,
+      "price_with_tax": number
+    }
+  ],
+  "invoices": [
+    {
+      "invoice_id": "string",
+      "date": "DD MMM YYYY",
+      "total_amount": number,
+      "customer_id": integer,
+      "tax_amount": number or null,
+      "products_purchased": ["product_id"]
+    }
+  ]
+}
+\`\`\`
 
-    If any field is missing in the CSV data, represent it with a null or empty value instead of omitting it. Please provide the output in valid JSON format.`;
+Please analyze the following CSV content and generate a structured JSON response according to this schema.
+`;
 
 export const extractInvoiceData = async (csvContent: string): Promise<ExtractedData> => {
     try {
@@ -46,7 +101,7 @@ export const extractInvoiceData = async (csvContent: string): Promise<ExtractedD
         const parts = [
             {
                 inlineData: {
-                    data: btoa(csvContent), // Base64 encode CSV content
+                    data: btoa(csvContent), 
                     mimeType: 'text/csv',
                 },
             },
@@ -56,21 +111,17 @@ export const extractInvoiceData = async (csvContent: string): Promise<ExtractedD
         const result = await model.generateContent(parts);
         let response = await result.response.text();
 
-        // Log raw response for debugging
         console.log("Raw AI Response:", response);
 
-        // Step 1: Sanitize response
         response = response.replace(/```json|```/g, '').trim();
 
-        // Step 2: Attempt to parse JSON
         let parsedResponse: any;
         try {
             parsedResponse = JSON.parse(response);
         } catch (jsonError) {
             console.warn('Malformed JSON detected. Attempting repair...');
-            // Attempt to repair malformed JSON
             try {
-                const repairedResponse = jsonrepair(response); // Repair JSON
+                const repairedResponse = jsonrepair(response);
                 parsedResponse = JSON.parse(repairedResponse);
             } catch (repairError: any) {
                 console.error('JSON Repair Failed:', repairError);
@@ -78,7 +129,6 @@ export const extractInvoiceData = async (csvContent: string): Promise<ExtractedD
             }
         }
 
-        // Step 3: Validate against schema
         const validate = ajv.compile(schema);
         if (!validate(parsedResponse)) {
             console.error('Validation Errors:', validate.errors);

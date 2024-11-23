@@ -29,5 +29,8 @@ export const HEADER_MAPPING: Record<string, string> = {
     'tax amount': 'Tax Amount',
     'total amount': 'Total Amount',
     'total': 'Total Amount',
-  };
-  
+};
+
+export function generateUniqueId(prefix = 'id'): string {
+  return `${prefix}-${Math.random().toString(36).substr(2, 9)}`;
+}

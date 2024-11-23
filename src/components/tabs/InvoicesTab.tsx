@@ -7,6 +7,7 @@ import ErrorAlert from '../common/ErrorAlert';
 import { formatCurrency } from '../../helpers/helper';
 import { Column } from '../common/Table';
 import { Invoice } from '../../utils/types';
+import ValueTooltip from '../common/ValueTooltip';
 
 const InvoicesTab = () => {
   const enrichedInvoices = useSelector(getEnrichedInvoices);
@@ -16,26 +17,34 @@ const InvoicesTab = () => {
   const columns: Column[] = [
     { key: 'serialNumber', label: 'Serial Number', sortable: true },
     { key: 'customerName', label: 'Customer Name', sortable: true },
-    { key: 'quantity', label: 'Quantity', sortable: true,
-      render:(invoice: Invoice) => <span onClick={() => handleClick(invoice.quantity)}>{invoice.quantity}</span>
+    { 
+      key: 'quantity', 
+      label: 'Quantity', 
+      sortable: true,
+      render: (invoice: Invoice) => (
+        <ValueTooltip value={invoice.quantity} label="Quantity">
+          <span>{invoice.quantity || '-'}</span>
+        </ValueTooltip>
+      )
     },
     {
       key: 'taxRate',
       label: 'Tax',
       sortable: true,
-      render: (invoice: Invoice) =>
-        invoice.taxRate
-          ? `${invoice.taxRate}%`
-          : <span onClick={() => handleClick(invoice.taxRate)}>{'-'}</span>,
+      render: (invoice: Invoice) => (
+        <ValueTooltip value={invoice.taxRate} label="Tax Rate">
+          <span>{invoice.taxRate ? `${invoice.taxRate}%` : '-'}</span>
+        </ValueTooltip>
+      ),
     },
     {
       key: 'totalAmount',
       label: 'Total Amount',
       sortable: true,
-      render: (invoice) => (
-        <span onClick={() => handleClick(invoice.totalAmount)}>
-          {formatCurrency(invoice.totalAmount)}
-        </span>
+      render: (invoice: Invoice) => (
+        <ValueTooltip value={invoice.totalAmount} label="Total Amount">
+          <span>{formatCurrency(invoice.totalAmount)}</span>
+        </ValueTooltip>
       ),
     },
     { key: 'date', label: 'Date', sortable: true },

@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --force",
-    "build": "tsc -b && vite build",
+    "dev": "vite",
+    "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -15,12 +15,7 @@
     "@reduxjs/toolkit": "^2.3.0",
     "babel-runtime": "^6.26.0",
     "dotenv": "^16.4.5",
-    "jimp": "^1.6.0",
     "jsonrepair": "^3.10.0",
-    "node-tesseract-ocr": "^2.2.1",
-    "pdf-parse": "^1.1.1",
-    "pdf-poppler": "^0.2.1",
-    "puppeteer": "^23.8.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-lottie": "^1.2.9",
