@@ -3,7 +3,7 @@
 import express from 'express';
 import multer from 'multer';
 import cors from 'cors';
-import { processFile } from './documentProcessor';
+import { processFile } from './documentProcessor.js';
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
