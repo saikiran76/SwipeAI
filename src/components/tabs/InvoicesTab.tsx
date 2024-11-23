@@ -16,15 +16,15 @@ const InvoicesTab = () => {
   const columns: Column[] = [
     { key: 'serialNumber', label: 'Serial Number', sortable: true },
     { key: 'customerName', label: 'Customer Name', sortable: true }, // Ensure this is mapped correctly
-    { key: 'productName', label: 'Product Name', sortable: true },
+    // { key: 'productName', label: 'Product Name', sortable: true },
     { key: 'quantity', label: 'Quantity', sortable: true },
     {
-      key: 'tax',
+      key: 'taxRate',
       label: 'Tax',
       sortable: true,
       render: (invoice: Invoice) =>
-          invoice.taxRate && invoice.taxAmount
-              ? `${invoice.taxRate}% (${formatCurrency(invoice.taxAmount)})`
+          invoice.taxRate 
+              ? `${invoice.taxRate}%`
               : '-',
     },
     {

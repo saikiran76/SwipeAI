@@ -35,7 +35,7 @@ const ProductsTab = () => {
       sortKey: 'discountRate',
       render: (product: Product) =>
         product.discountRate && product.discountAmount
-          ? `${product.discountRate}% (-${formatCurrency(product.discountAmount)})`
+          ? `${product.discountRate} (-${formatCurrency(product.discountAmount)})`
           : '-',
     },
     {
@@ -44,8 +44,8 @@ const ProductsTab = () => {
       sortable: true,
       sortKey: 'taxRate',
       render: (product: Product) =>
-        product.taxRate && product.taxAmount
-          ? `${product.taxRate}% (${formatCurrency(product.taxAmount)})`
+        product.taxRate
+          ? `${product.taxRate}`
           : '-',
     },
     {

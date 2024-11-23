@@ -23,35 +23,34 @@ const getModel = async () => {
 };
 
 const buildGeminiPrompt = () => ({
-  text: `You are an AI assistant that extracts key information from invoices. Your task is to accurately extract the following fields and return them in the exact JSON format provided. Ensure that all array fields are aligned so that each index corresponds to the same product across all arrays. Do not include any extra text or explanations. If certain fields are missing, use "unknown" or "0" as appropriate.
+  text: `You are an financial expert, Data Analyst, Advanced Software Engineer and an AI expert that extracts key information from invoices. Your task is to accurately extract the following fields and return them in the exact JSON format provided from any input document like pdf, image of any format, and as a data analyst i.e. excel sheet of any format. Ensure that all array fields are aligned so that each index corresponds to the same product across all arrays. Do not include any extra text or explanations. If certain fields are missing, use "unknown" or "0" as appropriate.
 
   {
-  "Invoice number": "string",
-  "Date": "string",
-  "Total amount": "string",
-  "Total Tax Rate": "string",
-  "Total Tax Amount": "string",
-  "Product names": ["string"],
-  "Unit Amount": ["string"],
-  "Quantity": ["string"],
-  "Price with tax": ["string"],
-  "Tax amount per product": ["string"],
-  "Tax rate per product": ["string"],
-  "Discount rate per product": ["string"],
-  "Discount amount per product": ["string"],
-  "Party name": "string",
-  "Company name": "string",
-  "Mobile number/Phone number/MOBILE": "string",
-  "Email": "string",
-  "Address": "string"
+    "Invoice number": "string",
+    "Date": "string",
+    "Total amount": "string",
+    "Total Tax Rate": "string",
+    "Total Tax Amount": "string",
+    "Product names": ["string"],
+    "Unit Amount": ["string"],
+    "Quantity": ["string"],
+    "Price with tax": ["string"],
+    "Discount rate per product": ["string"],
+    "Discount amount per product": ["string"],
+    "Party name": "string",
+    "Company name": "string",
+    "Mobile number/Phone number/MOBILE": "string",
+    "Email": "string",
+    "Address": "string"
   }
 
   Guidelines:
-  - **Tax Rate and Amount Extraction:** Extract overall and individual tax rates and amounts accurately.
-  - **Discount Extraction:** Ensure discounts are extracted correctly for each product.
+  - **Tax Rate and Amount Extraction:** Extract overall and individual tax rates and amounts accurately. Tax rate will be in GST format. (ex: 8% GST, CGST, SGST, IGST, etc.)
+  - **Discount Extraction:** Ensure discounts are extracted correctly for each product. Do not confuse between Tax rate and Discount rate. (Discount rate will be in percentage. Example: Disc(2%) or 2% OFF)
   - **Email Field:** Default to “unknown” if not present.
   - **General Instructions:** Use double quotes for strings; ensure numeric values are strings; no additional commentary.
   - **Data Alignment:** Each element in arrays must correspond to the same product across all arrays.
+  - **Excel data extractiion:** Ensure that the data is extracted in the exact format as shown in the example. Fields might be in different format and in different order since its a sheet of excel but as a analyst, you need to extract the data in the exact format as shown in the example.
 `,
 });
 
@@ -122,9 +121,9 @@ const transformGeminiResponse = (data: any): ExtractedData => {
           id: `CUST_${uuidv4()}`,
           name: customerName,
           phoneNumber: invoiceItem['Mobile number/Phone number/MOBILE'] || '0000000000',
-          email: invoiceItem['Email'] || 'unknown',
-          address: invoiceItem['Address'] || 'unknown',
-          totalPurchaseAmount: 0, // Will be calculated later
+          email: invoiceItem['Email'] || '-',
+          address: invoiceItem['Address'] || '-',
+          totalPurchaseAmount: 0,
       });
   }
 
@@ -133,82 +132,100 @@ const transformGeminiResponse = (data: any): ExtractedData => {
       id: invoiceId,
       serialNumber: invoiceItem['Invoice number'],
       customerId: customersMap.get(customerName)?.id || `CUST_${uuidv4()}`,
-      productId: `PROD_${uuidv4()}`, // This will be updated later
-      quantity: parseFloat(invoiceItem['Quantity'][0]) || 0,
-      // tax: parseFloat(invoiceItem['Tax amount per product'][0]) || 0,
-      taxRate: parseFloat(invoiceItem['Tax rate per product'][0]) || 0,
-      taxAmount: parseFloat(invoiceItem['Tax amount per product'][0]) || 0,
-      totalAmount: parseFloat(invoiceItem['Total amount'].replace(',', '').trim()) || 0,
+      productId: `PROD_${uuidv4()}`,
+      productName: Array.isArray(invoiceItem['Product names']) ? invoiceItem['Product names'][0] : '-',
+      quantity: Array.isArray(invoiceItem['Quantity']) 
+          ? invoiceItem['Quantity'].reduce((acc: number, curr: string) => acc + parseFloat(curr || '0'), 0) 
+          : 0,
+      taxRate: parseFloat(String(invoiceItem['Total Tax Rate'])) || 0,
+      totalAmount: parseFloat(String(invoiceItem['Total amount']).replace(/[^\d.-]/g, '')) || 0,
       date: invoiceItem['Date'],
-      customerName: customerName, // Ensure customer name is included here
+      customerName: customerName || '-',
   });
 
+  console.log("_invoices: ", invoices)
+
   // Extracting product data
-  invoiceItem['Product names'].forEach((productName: string, index: number) => {
-      const unitPrice = parseFloat(invoiceItem['Unit Amount'][index].replace(',', '').trim()) || 0;
-      
-      products.push({
-          id: `PROD_${uuidv4()}`,
-          name: productName || 'Unknown Product',
-          unitPrice: unitPrice.toFixed(2),
-          discountDisplay: formatDiscountString(invoiceItem['Discount rate per product'][index], invoiceItem['Discount amount per product'][index]),
-          taxDisplay: formatTaxString(invoiceItem['Tax rate per product'][index], invoiceItem['Tax amount per product'][index]),
-          discountRate: invoiceItem['Discount rate per product'][index],
-          discountAmount: invoiceItem['Discount amount per product'][index],
-          taxRate: invoiceItem['Tax rate per product'][index],
-          taxAmount: invoiceItem['Tax amount per product'][index],
-          priceWithTax: invoiceItem['Price with tax'][index],
-          quantity: parseFloat(invoiceItem['Quantity'][index]) || 0,
+  if (Array.isArray(invoiceItem['Product names'])) {
+      invoiceItem['Product names'].forEach((productName: string, index: number) => {
+          const unitPrice = Array.isArray(invoiceItem['Unit Amount']) 
+              ? parseFloat(String(invoiceItem['Unit Amount'][index]).replace(/[^\d.-]/g, '')) || 0 
+              : 0;
+
+          products.push({
+              id: `PROD_${uuidv4()}`,
+              name: productName || '-',
+              unitPrice: unitPrice.toFixed(2),
+              discountDisplay: formatDiscountString(
+                  Array.isArray(invoiceItem['Discount rate per product']) ? invoiceItem['Discount rate per product'][index] : '0',
+                  Array.isArray(invoiceItem['Discount amount per product']) ? invoiceItem['Discount amount per product'][index] : '0'
+              ),
+              taxDisplay: formatTaxString(String(invoiceItem['Total Tax Rate'])),
+              discountRate: Array.isArray(invoiceItem['Discount rate per product']) ? invoiceItem['Discount rate per product'][index] : '0',
+              discountAmount: Array.isArray(invoiceItem['Discount amount per product']) ? invoiceItem['Discount amount per product'][index] : '0',
+              taxRate: String(invoiceItem['Total Tax Rate']),
+              taxAmount: String(invoiceItem['Total Tax Amount']),
+              priceWithTax: Array.isArray(invoiceItem['Price with tax']) ? invoiceItem['Price with tax'][index] : '0',
+              quantity: Array.isArray(invoiceItem['Quantity']) ? parseFloat(invoiceItem['Quantity'][index] || '0') : 0,
+          });
       });
-  });
+  }
 
   // Update total purchase amount for customers
   customersMap.forEach((customer) => {
-      const totalPurchaseAmount = products.reduce((sum, p) => sum + parseFloat(p.priceWithTax.replace(',', '').trim()), 0);
-      customer.totalPurchaseAmount += totalPurchaseAmount;
+      const totalPurchaseAmount = products.reduce((sum, p) => sum + parseFloat(String(p.priceWithTax).replace(/[^\d.-]/g, '')), 0);
+      customer.totalPurchaseAmount = totalPurchaseAmount;
   });
 
-  const customers = Array.from(customersMap.values());
-
-  return { invoices, products, customers };
+  return { 
+      invoices, 
+      products, 
+      customers: Array.from(customersMap.values()) 
+  };
 };
 
 const formatDiscountString = (rate: string, amount: string): string => {
     return `${rate}% (-₹${amount})`;
 };
 
-const formatTaxString = (rate: string, amount: string): string => {
-    return `${rate}% (₹${amount})`;
+const formatTaxString = (rate: string): string => {
+    return `${rate}%`;
 };
+
+// const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+//     const binary = String.fromCharCode(...new Uint8Array(buffer));
+//     return btoa(binary);
+// };
+  
 
 export const extractDataFromDocument = async (fileContent: string, fileType: string): Promise<ExtractedData> => {
-   const model = await getModel();
-    
-   const parts = [
-       {
-           inlineData: {
-               data: fileContent.split(',')[1],
-               mimeType: fileType
-           }
-       },
-       buildGeminiPrompt()
-   ];
-
-   try {
-       const result = await model.generateContent(parts);
-       const response = result.response.text();
-       console.log('Raw Gemini response:', response);
-       return processGeminiResponse(response);
-       
-   } catch (error) {
-       console.error('Data extraction error:', error);
-       return validateExtractedData({
-           invoices: [],
-           products: [],
-           customers: []
-       });
-   }
-};
+    const model = await getModel();
+     
+    const parts = [
+        {
+            inlineData: {
+                data: fileContent.split(',')[1],
+                mimeType: fileType
+            }
+        },
+        buildGeminiPrompt()
+    ];
+ 
+    try {
+        const result = await model.generateContent(parts);
+        const response = result.response.text();
+        console.log('Raw Gemini response:', response);
+        return processGeminiResponse(response);
+        
+    } catch (error) {
+        console.error('Data extraction error:', error);
+        return validateExtractedData({
+            invoices: [],
+            products: [],
+            customers: []
+        });
+    }
+ };
 
 interface ExtractedData {
     invoices: Invoice[];

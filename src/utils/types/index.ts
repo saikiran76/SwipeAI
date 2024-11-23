@@ -12,10 +12,10 @@ export interface Product {
   name: string;
   quantity: number;
   unitPrice: string;
-  discountDisplay: string;
-  taxDisplay: string;
-  discountRate: string;
-  discountAmount: string;
+  discountDisplay?: string;
+  taxDisplay?: string;
+  discountRate?: string;
+  discountAmount?: string;
   taxRate: string;
   taxAmount: string;
   priceWithTax: string;
@@ -27,10 +27,11 @@ export interface Invoice {
   customerId: string;
   customerName: string;
   productId: string;
+  productName: string;
   quantity: number;
   // tax: number;
   taxRate: number;
-  taxAmount: number;
+  // taxAmount: number;
   totalAmount: number;
   date: string;
 }

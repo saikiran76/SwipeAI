@@ -16,7 +16,7 @@ export const getEnrichedInvoices = createSelector(
         ...invoice,
         customerName: customer?.name || 'Unknown Customer',
         productName: product?.name || 'Unknown Product',
-        taxRate: product?.taxRate || '',
+        taxRate: invoice?.taxRate || '',
         taxAmount: product?.taxAmount || '',
       };
     });
